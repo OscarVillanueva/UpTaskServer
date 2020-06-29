@@ -3,6 +3,7 @@ const bcryptjs = require("bcryptjs")
 const jwt = require("jsonwebtoken")
 const User = require("../models/User")
 const Project = require("../models/Project")
+const Task = require("../models/Task")
 
 // Crear y firmar un JWT
 const createToken = (user, secret, expiresIn) => {
@@ -25,6 +26,28 @@ const resolvers = {
 
             }
             else throw new Error("No autorizado")
+        },
+
+        getTask: async (_, { id }, ctx) => {
+            
+            if ( ctx && ctx.user) {
+
+                const project = await Project.findById( id )
+
+                if ( !project ) throw new Error("Proyecto no encontrado")
+
+                // Revisar si el proyecto actual pertenece al usuario autenticado
+                // Verificar el creador del projecto
+                if( project.owner.toString() !== ctx.user.id ) throw new Error("No autorizado")
+                 
+                // Sacamos las tareas
+                const tasks = await Task.find({ projectId: id })
+
+                return tasks
+
+            }
+            else throw new Error("No autorizado")
+
         },
 
     },
@@ -150,6 +173,96 @@ const resolvers = {
                 await Project.findOneAndDelete({ _id: id })
 
                 return "Proyecto eliminado"
+
+            }
+            else throw new Error("No autorizado")
+
+        },
+
+        // Tareas
+        createTask: async (_, { input }) => {
+            
+            try {
+                
+                // Creamos la tarea
+                const task = new Task(input)
+
+                // Guardamos la tarea
+                const result = await task.save()
+
+                return result
+
+            } catch (error) {
+                console.log(error);
+            }
+
+        },
+
+        updateTask: async (_, { id, input, status }, ctx) => {
+            
+            if ( ctx && ctx.user ) {
+
+                const { taskName, projectId } = input
+
+                try {
+
+                    // Si la tarea existe o no
+                    let isTarea = await Task.findById( id )
+            
+                    if( !isTarea ) throw new Error("Tarea no econtrada")
+            
+                    // Extraer proyecto
+                    const project = await Project.findById( projectId )
+            
+                    // Revisar si el proyecto actual pertenece al usuario autenticado
+                    // Verificar el creador del projecto
+                    if( project.owner.toString() !== ctx.user.id ) throw new Error("No autorizado")
+
+                    // Crear un objeto con la nueva información
+                    const newTask = {}
+                    newTask.taskName = taskName        
+                    newTask.state = status 
+                    
+                    // Guardar la tarea
+                    isTarea = await Task.findOneAndUpdate({ _id: id }, newTask, { new: true })
+                    
+                    return isTarea
+            
+                } catch (error) {
+                    console.log(error);
+                    throw new Error("Hubo un error")
+                }
+
+            }
+            else throw new Error("No autorizado")
+        },
+
+        deleteTask: async (_, { id }, ctx) => {
+            
+            if ( ctx && ctx.user ) { 
+
+                try {
+
+                    // Si la tarea existe o no
+                    let isTarea = await Task.findById( id )
+            
+                    if( !isTarea ) throw new Error("Tarea no encontrada")
+            
+                    // Extraer proyecto
+                    const project = await Project.findById( isTarea.projectId )
+
+                    // Revisar si el proyecto actual pertenece al usuario autenticado
+                    // Verificar el creador del projecto
+                    if(project.owner.toString() !== ctx.user.id) throw new Error("No autorizado")
+            
+                    // // Eliminar la tarea
+                    await Task.findByIdAndRemove({_id: id})
+                    
+                    return "Tarea eliminada"
+            
+                } catch (error) {
+                    console.log(error);
+                }
 
             }
             else throw new Error("No autorizado")

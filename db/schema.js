@@ -29,10 +29,26 @@ const typeDefs = gql`
         projectName: String!
     }
 
+    # Tarea
+    type Task {
+        id: ID
+        taskName: String
+        projectId: String
+        state: Boolean
+    }
+
+    input TaskInput {
+        taskName: String!
+        projectId: String!
+    }
+
     type Query {
 
         # Proyectos
         getProjects: [Project]
+
+        # Tareas
+        getTask(id: ID!): [Task]
         
     }
 
@@ -46,6 +62,11 @@ const typeDefs = gql`
         createProject(input: ProjectInput): Project
         updateProject(id: ID!, input: ProjectInput): Project
         deleteProject(id: ID!): String
+
+        # Tareas
+        createTask(input: TaskInput): Task
+        updateTask(id: ID!, input: TaskInput, status: Boolean): Task
+        deleteTask(id: ID! ): String
 
     }
 
