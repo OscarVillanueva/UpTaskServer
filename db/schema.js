@@ -19,9 +19,20 @@ const typeDefs = gql`
         token: String
     }
 
+    # Proyectos
+    type Project {
+        id: ID
+        projectName: String
+    }
+
+    input ProjectInput {
+        projectName: String!
+    }
+
     type Query {
 
-        helloWorld: String
+        # Proyectos
+        getProjects: [Project]
         
     }
 
@@ -30,6 +41,11 @@ const typeDefs = gql`
         # Usuarios
         createUser(input: UserInput): String
         login(input: Login): Token
+
+        # Proyectos
+        createProject(input: ProjectInput): Project
+        updateProject(id: ID!, input: ProjectInput): Project
+        deleteProject(id: ID!): String
 
     }
 
